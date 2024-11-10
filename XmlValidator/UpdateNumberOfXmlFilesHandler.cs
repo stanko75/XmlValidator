@@ -2,14 +2,11 @@
 
 namespace XmlValidator
 {
-    public class UpdateNumberOfXmlFilesHandlerAsync: ICommandHandler<UpdateNumberOfXmlFilesCommand>
+    public class UpdateNumberOfXmlFilesHandlerAsync : ICommandHandler<UpdateNumberOfXmlFilesCommand>
     {
         public void Execute(UpdateNumberOfXmlFilesCommand command)
         {
-            command.NumOfXmlCntObject.GetCurrentParent().Invoke((MethodInvoker)(() =>
-            {
-                command.NumOfXmlCntObject.Text = command.NumOfXmlCnt.ToString();
-            }));
+            command?.NumOfXmlCntObject?.GetCurrentParent().Invoke((MethodInvoker)(() => { command.NumOfXmlCntObject.Text = command.NumOfXmlCnt.ToString(); }));
         }
     }
 }

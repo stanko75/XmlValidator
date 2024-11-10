@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Schema;
@@ -85,17 +86,25 @@ namespace XmlValidator
                 btnStart.Enabled = false;
                 DisconnectDataSources();
 
-                await DoValidation(xmlFileOrFolderName, xslFileOrFolderName, tsslNumOfXmlCnt, tsslNumOfXslCnt,
-                    _dsValidator, cbOnlyCII.Checked, tbUblXsdFilesLocation.Text, tbCiiXsdFilesLocation.Text);
-
-                ConnectDataGridViews();
-                btnStart.Enabled = true;
+                await DoValidation(xmlFileOrFolderName
+                    , xslFileOrFolderName
+                    , tsslNumOfXmlCnt
+                    , tssValidationStatus
+                    , _dsValidator
+                    , cbOnlyCII.Checked
+                    , tbUblXsdFilesLocation.Text
+                    , tbCiiXsdFilesLocation.Text);
             }
         }
 
-        private async Task DoValidation(string xmlFileOrFolderName, string xslFileOrFolderName,
-            ToolStripStatusLabel numOfXmlCnt, ToolStripStatusLabel numOfXslCnt, DataSet dsValidation,
-            bool bolTestOnlyCiiFiles, string ublXsdFilesLocation, string ciiXsdFilesLocation)
+        private async Task DoValidation(string xmlFileOrFolderName
+            , string xslFileOrFolderName
+            , ToolStripStatusLabel numOfXmlCnt
+            , ToolStripStatusLabel tssValidationStatus
+            , DataSet dsValidation
+            , bool bolTestOnlyCiiFiles
+            , string ublXsdFilesLocation
+            , string ciiXsdFilesLocation)
         {
             CiiXmlSchemaSetCommand ciiXmlSchemaSetCommand = new CiiXmlSchemaSetCommand
             {
@@ -113,14 +122,15 @@ namespace XmlValidator
                 XslFileOrFolderName = xslFileOrFolderName,
                 ResultDataSet = dsValidation,
                 NumOfXmlCntObject = numOfXmlCnt,
-                NumOfXslCntObject = numOfXslCnt,
                 TestOnlyCiiFiles = bolTestOnlyCiiFiles,
                 ToolStripCiiStatusLabel = tssCiiStatus,
                 ToolStripUblStatusLabel = tssUblStatus,
+                ToolStripValidationStatusLabel = tssValidationStatus,
                 UblXsdFilesLocation = ublXsdFilesLocation,
                 CiiXsdFilesLocation = ciiXsdFilesLocation,
                 CiiXmlSchemaSet = _ciiXmlSchemaSet.Execute(ciiXmlSchemaSetCommand),
                 UblXmlSchemaSet = _ublXmlSchemaSet.Execute(ublXmlSchemaSetCommand),
+                ExecuteDisplayInGrid = ConnectDataGridViews
             };
             try
             {
@@ -249,6 +259,15 @@ namespace XmlValidator
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            foreach (Control control in Controls)
+            {
+                if (!(control is Button button)) continue;
+                if (!button.Enabled)
+                {
+                    tssValidationStatus.Text = "Cancel requested, please wait";
+                }
+            }
+
             _validationHandlerAsync.CancelOperation();
         }
 
@@ -297,32 +316,68 @@ namespace XmlValidator
             }
         }
 
+        private readonly object _dataSetLock = new object();
+        private readonly ReaderWriterLockSlim _dataSetLockSlim = new ReaderWriterLockSlim();
+
         private void ConnectDataGridViews()
         {
-            dgvXslFiles.RowPrePaint += DgvXslFilesOnRowPrePaint;
-            dgvXmlFiles.RowPrePaint += DgvXmlFilesFilesOnRowPrePaint;
-            dgvResult.RowPrePaint += DgvResultFilesOnRowPrePaint;
-
-            BindingSource xmlBindingSource = new BindingSource
+            try
             {
-                DataSource = _dsValidator,
-                DataMember = DataTableNames.XmlFiles
-            };
-            dgvXmlFiles.DataSource = xmlBindingSource;
+                DataSet tempDataSet;
+                lock (_dataSetLock)
+                {
+                    _dataSetLockSlim.EnterReadLock();
+                    try
+                    {
+                        tempDataSet = _dsValidator.Copy();
+                    }
+                    finally
+                    {
+                        _dataSetLockSlim.ExitReadLock();
+                    }
+                }
 
-            BindingSource xslBindingSource = new BindingSource
-            {
-                DataSource = xmlBindingSource,
-                DataMember = RelationNames.XmlFilesXslFilesRelation
-            };
-            dgvXslFiles.DataSource = xslBindingSource;
+                BindingSource xmlBindingSource = new BindingSource();
+                xmlBindingSource.SuspendBinding();
+                xmlBindingSource.DataSource = tempDataSet;
+                xmlBindingSource.DataMember = DataTableNames.XmlFiles;
+                xmlBindingSource.ResumeBinding();
 
-            BindingSource resultValidatorBindingSource = new BindingSource
+                dgvXslFiles.Invoke((MethodInvoker)delegate
+                {
+                    dgvXmlFiles.DataSource = xmlBindingSource;
+                    dgvXmlFiles.RowPrePaint += DgvXmlFilesFilesOnRowPrePaint;
+                });
+
+                BindingSource xslBindingSource = new BindingSource();
+                xslBindingSource.SuspendBinding();
+                xslBindingSource.DataSource = xmlBindingSource;
+                xslBindingSource.DataMember = RelationNames.XmlFilesXslFilesRelation;
+                xslBindingSource.ResumeBinding();
+
+                dgvXslFiles.Invoke((MethodInvoker)delegate
+                {
+                    dgvXslFiles.RowPrePaint += DgvXslFilesOnRowPrePaint;
+                    dgvXslFiles.DataSource = xslBindingSource;
+                });
+
+                BindingSource resultValidatorBindingSource = new BindingSource();
+                resultValidatorBindingSource.SuspendBinding();
+                resultValidatorBindingSource.DataSource = xslBindingSource;
+                resultValidatorBindingSource.DataMember = RelationNames.XslFilesResultRelation;
+                resultValidatorBindingSource.ResumeBinding();
+                dgvResult.Invoke((MethodInvoker)delegate
+                {
+                    dgvResult.DataSource = resultValidatorBindingSource;
+                    dgvResult.RowPrePaint += DgvResultFilesOnRowPrePaint;
+                });
+
+                btnStart.Invoke((MethodInvoker)delegate { btnStart.Enabled = true; });
+            }
+            catch (Exception e)
             {
-                DataSource = xslBindingSource,
-                DataMember = RelationNames.XslFilesResultRelation
-            };
-            dgvResult.DataSource = resultValidatorBindingSource;
+                MessageBox.Show(e.Message);
+            }
         }
 
         private void btnCopyGoodFiles_Click(object sender, EventArgs e)
@@ -525,15 +580,12 @@ namespace XmlValidator
                 {
                     tbCiiXsdFilesLocation.Text =
                         Path.Combine(downloadKositFromGitHubCommand.RooFolderWhereToSaveDownloadedFiles, @"validator-configuration-xrechnung\zip\resources\cii\16b\xsd");
-                    tbCiiXsdFilesLocation_Leave(null, null);
                 }));
 
                 tbUblXsdFilesLocation.Invoke(new Action(() =>
                 {
                     tbUblXsdFilesLocation.Text = Path.Combine(downloadKositFromGitHubCommand.RooFolderWhereToSaveDownloadedFiles, @"validator-configuration-xrechnung\zip\resources\ubl\2.1\xsd");
-                    tbUblXsdFilesLocation_Leave(null, null);
                 }));
-
             }
             catch (Exception exception)
             {

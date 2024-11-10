@@ -33,7 +33,8 @@ namespace XmlValidator.DataTables
             dtXslFiles.PrimaryKey = new[]
             {
                 dtXslFiles.Columns[XslFilesColumns.Id],
-                dtXslFiles.Columns[XslFilesColumns.FkXmlFilesId]
+                dtXslFiles.Columns[XslFilesColumns.FkXmlFilesId],
+                dtXslFiles.Columns[XslFilesColumns.FileName]
             };
             return dtXslFiles;
         }

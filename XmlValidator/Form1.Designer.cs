@@ -31,10 +31,9 @@
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.tsslNumOfXmlLbl = new System.Windows.Forms.ToolStripStatusLabel();
             this.tsslNumOfXmlCnt = new System.Windows.Forms.ToolStripStatusLabel();
-            this.tsslNumOfXslLbl = new System.Windows.Forms.ToolStripStatusLabel();
-            this.tsslNumOfXslCnt = new System.Windows.Forms.ToolStripStatusLabel();
             this.tssCiiStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.tssUblStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.tssValidationStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.btnStart = new System.Windows.Forms.Button();
             this.pnlConfiguration = new System.Windows.Forms.Panel();
             this.cbOnlyCII = new System.Windows.Forms.CheckBox();
@@ -114,10 +113,9 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsslNumOfXmlLbl,
             this.tsslNumOfXmlCnt,
-            this.tsslNumOfXslLbl,
-            this.tsslNumOfXslCnt,
             this.tssCiiStatus,
-            this.tssUblStatus});
+            this.tssUblStatus,
+            this.tssValidationStatus});
             this.statusStrip1.Location = new System.Drawing.Point(0, 701);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(800, 22);
@@ -136,18 +134,6 @@
             this.tsslNumOfXmlCnt.Size = new System.Drawing.Size(13, 17);
             this.tsslNumOfXmlCnt.Text = "0";
             // 
-            // tsslNumOfXslLbl
-            // 
-            this.tsslNumOfXslLbl.Name = "tsslNumOfXslLbl";
-            this.tsslNumOfXslLbl.Size = new System.Drawing.Size(111, 17);
-            this.tsslNumOfXslLbl.Text = "Number of XSL files";
-            // 
-            // tsslNumOfXslCnt
-            // 
-            this.tsslNumOfXslCnt.Name = "tsslNumOfXslCnt";
-            this.tsslNumOfXslCnt.Size = new System.Drawing.Size(13, 17);
-            this.tsslNumOfXslCnt.Text = "0";
-            // 
             // tssCiiStatus
             // 
             this.tssCiiStatus.Name = "tssCiiStatus";
@@ -157,6 +143,11 @@
             // 
             this.tssUblStatus.Name = "tssUblStatus";
             this.tssUblStatus.Size = new System.Drawing.Size(0, 17);
+            // 
+            // tssValidationStatus
+            // 
+            this.tssValidationStatus.Name = "tssValidationStatus";
+            this.tssValidationStatus.Size = new System.Drawing.Size(0, 17);
             // 
             // btnStart
             // 
@@ -709,8 +700,6 @@
         private System.Windows.Forms.DataGridView dgvXslFiles;
         private System.Windows.Forms.Splitter splitter2;
         private System.Windows.Forms.DataGridView dgvResult;
-        private System.Windows.Forms.ToolStripStatusLabel tsslNumOfXslLbl;
-        private System.Windows.Forms.ToolStripStatusLabel tsslNumOfXslCnt;
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Button btnClear;
         private System.Windows.Forms.Button btnSaveToXml;
@@ -753,6 +742,7 @@
         private System.Windows.Forms.TextBox tbLocationOfDownload;
         private System.Windows.Forms.Panel panel9;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.ToolStripStatusLabel tssValidationStatus;
     }
 }
 

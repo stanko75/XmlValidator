@@ -1,4 +1,4 @@
-﻿using System.Windows.Forms;
+﻿using System;
 
 namespace XmlValidator
 {
@@ -6,10 +6,14 @@ namespace XmlValidator
     {
         public void Execute(UpdateNumberOfXslFilesCommand command)
         {
-            command.NumOfXslCntObject.GetCurrentParent().Invoke((MethodInvoker)(() =>
+            if (command.NumOfXslCntObject.GetCurrentParent().InvokeRequired)
+            {
+                command.NumOfXslCntObject.GetCurrentParent().Invoke(new Action(() => { command.NumOfXslCntObject.Text = command.NumOfXslCnt.ToString(); }));
+            }
+            else
             {
                 command.NumOfXslCntObject.Text = command.NumOfXslCnt.ToString();
-            }));
+            }
         }
     }
 }
